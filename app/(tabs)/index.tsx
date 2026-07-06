@@ -1,59 +1,38 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   RefreshControl,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { ArticleCard } from '../../components/ArticleCard';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useArticleFeed } from '../../hooks/useArticleFeed';
 import { useGamificationStats } from '../../hooks/useGamification';
+import { useSearch } from '../../hooks/useSearch';
 import { t } from '../../i18n';
 import type { Article } from '../../types/api';
 
-function FeedHeader() {
+export default function FeedScreen() {
   const { user } = useAuth();
   const { data: stats } = useGamificationStats();
+  useLanguage();
 
-  return (
-    <View className="px-4 pt-14 pb-4 bg-white border-b border-gray-100">
-      <View className="flex-row items-center justify-between">
-        <View className="flex-row items-center gap-2">
-          <View className="w-8 h-8 rounded-lg bg-brand items-center justify-center">
-            <Text className="text-white font-bold text-base">P</Text>
-          </View>
-          <Text className="text-2xl font-bold text-ink">
-            {t('feed.title')}
-          </Text>
-        </View>
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const inputRef = useRef<TextInput>(null);
 
-        {/* Streak indicator — only shown when logged in and streak > 0 */}
-        {user && stats && stats.currentStreak > 0 && (
-          <View className="flex-row items-center gap-1 bg-orange-50 px-3 py-1.5 rounded-full">
-            <Text className="text-base">🔥</Text>
-            <Text className="text-orange-500 font-bold text-sm">
-              {stats.currentStreak}
-            </Text>
-          </View>
-        )}
-      </View>
+  const isSearching = searchOpen && searchQuery.trim().length >= 2;
 
-      {user && (
-        <Text className="text-muted text-sm mt-1">
-          {t('feed.personalizedFeed')}
-        </Text>
-      )}
-    </View>
-  );
-}
-
-export default function FeedScreen() {
+  // Feed data
   const {
-    data,
-    isLoading,
-    isError,
-    error,
+    data: feedData,
+    isLoading: feedLoading,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -61,31 +40,29 @@ export default function FeedScreen() {
     isRefetching,
   } = useArticleFeed();
 
-  const articles: Article[] = data?.pages.flatMap((page) => page.data) ?? [];
+  // Search data
+  const {
+    data: searchData,
+    isFetching: searchFetching,
+  } = useSearch(searchQuery);
 
-  if (isLoading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#FF5A5F" />
-      </View>
-    );
+  const feedArticles: Article[] =
+    feedData?.pages.flatMap((p) => p.data) ?? [];
+  const searchArticles: Article[] = searchData?.data ?? [];
+  const articles = isSearching ? searchArticles : feedArticles;
+
+  function openSearch() {
+    setSearchOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
   }
 
-  if (isError) {
-    return (
-      <View className="flex-1 bg-gray-50">
-        <FeedHeader />
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-ink text-center font-medium mb-1">
-            {t('feed.couldNotLoad')}
-          </Text>
-          <Text className="text-muted text-center text-sm">
-            {error instanceof Error ? error.message : t('feed.somethingWentWrong')}
-          </Text>
-        </View>
-      </View>
-    );
+  function closeSearch() {
+    setSearchOpen(false);
+    setSearchQuery('');
+    inputRef.current?.blur();
   }
+
+  const isLoading = isSearching ? searchFetching : feedLoading;
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -93,19 +70,92 @@ export default function FeedScreen() {
         data={articles}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <ArticleCard article={item} />}
-        ListHeaderComponent={<FeedHeader />}
         contentContainerStyle={{ paddingTop: 12, paddingBottom: 24 }}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor="#FF5A5F"
-          />
+          !isSearching ? (
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor="#FF5A5F"
+            />
+          ) : undefined
         }
         onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+          if (!isSearching && hasNextPage && !isFetchingNextPage)
+            fetchNextPage();
         }}
         onEndReachedThreshold={0.5}
+        ListHeaderComponent={
+          <View className="bg-white border-b border-gray-100 px-4 pt-14 pb-3 mb-3">
+            {searchOpen ? (
+              // Search bar
+              <View className="flex-row items-center gap-2">
+                <View className="flex-1 flex-row items-center bg-gray-100 rounded-xl px-3 py-2 gap-2">
+                  <Ionicons name="search" size={16} color="#6B7280" />
+                  <TextInput
+                    ref={inputRef}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder={t('search.placeholder')}
+                    placeholderTextColor="#9CA3AF"
+                    className="flex-1 text-ink text-sm"
+                    autoCorrect={false}
+                    returnKeyType="search"
+                  />
+                  {searchQuery.length > 0 && (
+                    <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                      <Ionicons
+                        name="close-circle"
+                        size={16}
+                        color="#9CA3AF"
+                      />
+                    </Pressable>
+                  )}
+                </View>
+                <Pressable onPress={closeSearch} hitSlop={8}>
+                  <Text className="text-brand font-medium text-sm">
+                    {t('search.cancel')}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : (
+              // Normal header
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center gap-2">
+                  <View className="w-8 h-8 rounded-lg bg-brand items-center justify-center">
+                    <Text className="text-white font-bold text-base">P</Text>
+                  </View>
+                  <Text className="text-2xl font-bold text-ink">
+                    {t('feed.title')}
+                  </Text>
+                </View>
+
+                <View className="flex-row items-center gap-3">
+                  {/* Streak indicator */}
+                  {user && stats && stats.currentStreak > 0 && (
+                    <View className="flex-row items-center gap-1 bg-orange-50 px-3 py-1.5 rounded-full">
+                      <Text className="text-base">🔥</Text>
+                      <Text className="text-orange-500 font-bold text-sm">
+                        {stats.currentStreak}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Search icon */}
+                  <Pressable onPress={openSearch} hitSlop={8}>
+                    <Ionicons name="search" size={22} color="#1A1A1A" />
+                  </Pressable>
+                </View>
+              </View>
+            )}
+
+            {!searchOpen && user && (
+              <Text className="text-muted text-sm mt-1">
+                {t('feed.personalizedFeed')}
+              </Text>
+            )}
+          </View>
+        }
         ListFooterComponent={
           isFetchingNextPage ? (
             <View className="py-4">
@@ -114,11 +164,23 @@ export default function FeedScreen() {
           ) : null
         }
         ListEmptyComponent={
-          <View className="items-center justify-center py-20 px-6">
-            <Text className="text-muted text-center">
-              {t('feed.noArticles')}
-            </Text>
-          </View>
+          isLoading ? (
+            <View className="py-20 items-center">
+              <ActivityIndicator color="#FF5A5F" />
+            </View>
+          ) : isSearching ? (
+            <View className="items-center justify-center py-20 px-6">
+              <Text className="text-muted text-center">
+                {t('search.noResults', { query: searchQuery })}
+              </Text>
+            </View>
+          ) : (
+            <View className="items-center justify-center py-20 px-6">
+              <Text className="text-muted text-center">
+                {t('feed.noArticles')}
+              </Text>
+            </View>
+          )
         }
       />
     </View>

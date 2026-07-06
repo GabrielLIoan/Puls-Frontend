@@ -79,6 +79,7 @@ export default {
     categoryPreferences: 'Preferințe categorii',
     language: 'Limbă',
     logout: 'Deconectează-te',
+    changePassword: 'Schimbă parola',  
   },
 
   // Language switcher
@@ -199,5 +200,22 @@ export default {
     retry: 'Încearcă din nou',
     loading: 'Se încarcă...',
     error: 'Ceva nu a mers bine',
+  },
+
+  // Notifications
+  notifications: {
+    title: 'Digest zilnic',
+    subtitle: 'Primești un rezumat zilnic al articolelor noi',
+    digestTime: 'Trimite la',
+    morning: '8:00',
+    afternoon: '13:00',
+    evening: '19:00',
+  },
+
+  search: {
+    placeholder: 'Caută articole...',
+    cancel: 'Anulează',
+    noResults: 'Niciun rezultat pentru "%{query}"',
+    searching: 'Se caută...',
   },
 };

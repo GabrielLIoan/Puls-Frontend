@@ -11,6 +11,71 @@ import {
 } from '../../hooks/useGamification';
 import { t } from '../../i18n';
 
+type SupportedLocale = 'en' | 'ro';
+
+function SettingsRow({
+  label,
+  onPress,
+  destructive = false,
+}: {
+  label: string;
+  onPress: () => void;
+  destructive?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100"
+    >
+      <Text
+        className={`font-medium ${destructive ? 'text-red-500' : 'text-ink'}`}
+      >
+        {label}
+      </Text>
+      {!destructive && (
+        <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+      )}
+    </Pressable>
+  );
+}
+
+function LanguageSwitcher({
+  locale,
+  availableLocales,
+  setLanguage,
+}: {
+  locale: string;
+  availableLocales: { value: string; label: string }[];
+  setLanguage: (l: SupportedLocale) => void;
+}) {
+  return (
+    <View className="px-4 py-4">
+      <Text className="text-ink font-medium mb-3">{t('profile.language')}</Text>
+      <View className="flex-row gap-2">
+        {availableLocales.map(({ value, label }) => (
+          <Pressable
+            key={value}
+            onPress={() => setLanguage(value as SupportedLocale)}
+            className={`flex-1 py-2.5 rounded-xl items-center border ${
+              locale === value
+                ? 'bg-brand border-brand'
+                : 'bg-white border-gray-200'
+            }`}
+          >
+            <Text
+              className={`font-medium text-sm ${
+                locale === value ? 'text-white' : 'text-ink'
+              }`}
+            >
+              {label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, isLoading: isAuthLoading, logout } = useAuth();
@@ -43,14 +108,13 @@ export default function ProfileScreen() {
 
         <Pressable
           onPress={() => router.push('/auth/signup')}
-          className="border border-gray-200 rounded-xl py-3 px-8 items-center w-full"
+          className="border border-gray-200 rounded-xl py-3 px-8 items-center w-full mb-8"
         >
           <Text className="text-ink font-semibold">
             {t('auth.signupButton')}
           </Text>
         </Pressable>
 
-        {/* Language switcher available even when logged out */}
         <LanguageSwitcher
           locale={locale}
           availableLocales={availableLocales}
@@ -75,79 +139,45 @@ export default function ProfileScreen() {
 
       {/* Settings rows */}
       <View className="bg-white mx-4 rounded-2xl mb-4 overflow-hidden">
-        <Pressable
+        <SettingsRow
+          label={t('profile.manageOutlets')}
           onPress={() => router.push('/settings/outlets')}
-          className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100"
-        >
-          <Text className="text-ink font-medium">
-            {t('profile.manageOutlets')}
-          </Text>
-          <Ionicons name="chevron-forward" size={18} color="#6B7280" />
-        </Pressable>
-
-        <Pressable className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100">
-          <Text className="text-ink font-medium">
-            {t('profile.categoryPreferences')}
-          </Text>
-          <Ionicons name="chevron-forward" size={18} color="#6B7280" />
-        </Pressable>
+        />
+        <SettingsRow
+          label={t('profile.categoryPreferences')}
+          onPress={() => {}}
+        />
+        {/* Password reset — navigates to forgot-password which sends
+            the reset email. Email is pre-filled since we know it. */}
+        <SettingsRow
+          label={t('profile.changePassword')}
+          onPress={() =>
+            router.push({
+              pathname: '/auth/forgot-password',
+              params: { prefillEmail: user.email },
+            })
+          }
+        />
 
         {/* Language switcher */}
-        <View className="px-4 py-4">
-          <Text className="text-ink font-medium mb-3">
-            {t('profile.language')}
-          </Text>
-          <LanguageSwitcher
-            locale={locale}
-            availableLocales={availableLocales}
-            setLanguage={setLanguage}
-          />
-        </View>
+        <LanguageSwitcher
+          locale={locale}
+          availableLocales={availableLocales}
+          setLanguage={setLanguage}
+        />
       </View>
 
       {/* Badge gallery */}
       {badges && <BadgeGallery earnedBadges={badges} />}
 
       {/* Logout */}
-      <Pressable onPress={logout} className="mx-4 py-4 mt-2 mb-8">
-        <Text className="text-red-500 font-medium text-center">
-          {t('profile.logout')}
-        </Text>
-      </Pressable>
+      <View className="bg-white mx-4 rounded-2xl mb-8 overflow-hidden">
+        <SettingsRow
+          label={t('profile.logout')}
+          onPress={logout}
+          destructive
+        />
+      </View>
     </ScrollView>
-  );
-}
-
-function LanguageSwitcher({
-  locale,
-  availableLocales,
-  setLanguage,
-}: {
-  locale: string;
-  availableLocales: { value: string; label: string }[];
-  setLanguage: (l: any) => void;
-}) {
-  return (
-    <View className="flex-row gap-2">
-      {availableLocales.map(({ value, label }) => (
-        <Pressable
-          key={value}
-          onPress={() => setLanguage(value)}
-          className={`flex-1 py-2.5 rounded-xl items-center border ${
-            locale === value
-              ? 'bg-brand border-brand'
-              : 'bg-white border-gray-200'
-          }`}
-        >
-          <Text
-            className={`font-medium text-sm ${
-              locale === value ? 'text-white' : 'text-ink'
-            }`}
-          >
-            {label}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
   );
 }

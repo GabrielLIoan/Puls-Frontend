@@ -79,6 +79,7 @@ export default {
     categoryPreferences: 'Category preferences',
     language: 'Language',
     logout: 'Log out',
+    changePassword: 'Change password', 
   },
 
   // Language switcher
@@ -199,5 +200,22 @@ export default {
     retry: 'Try again',
     loading: 'Loading...',
     error: 'Something went wrong',
+  },
+
+  // Notifications
+  notifications: {
+    title: 'Daily digest',
+    subtitle: 'Get a daily summary of new articles',
+    digestTime: 'Send at',
+    morning: '8am',
+    afternoon: '1pm',
+    evening: '7pm',
+  },
+  
+  search: {
+    placeholder: 'Search articles...',
+    cancel: 'Cancel',
+    noResults: 'No results for "%{query}"',
+    searching: 'Searching...',
   },
 };

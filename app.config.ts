@@ -5,7 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: 'Puls',
   slug: 'puls',
   scheme: 'puls',
-  plugins: ['expo-secure-store', 'expo-localization'],
+  plugins: ['expo-secure-store', 'expo-localization', 'expo-notifications'],
   extra: {
     // IMPORTANT: 'localhost' only resolves on iOS Simulator. For a
     // physical device on the same Wi-Fi, replace this with your

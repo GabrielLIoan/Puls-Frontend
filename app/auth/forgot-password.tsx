@@ -1,11 +1,11 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    ActivityIndicator,
-    Pressable,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Pressable,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 import { authApi } from '../../api/auth';
 import { useLanguage } from '../../context/LanguageContext';
@@ -13,9 +13,12 @@ import { t } from '../../i18n';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const { prefillEmail } = useLocalSearchParams<{ prefillEmail?: string }>();
   useLanguage();
 
-  const [email, setEmail] = useState('');
+  // Pre-fill if coming from the Profile tab (user is already logged in
+  // and we know their email — saves them a step)
+  const [email, setEmail] = useState(prefillEmail ?? '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +47,7 @@ export default function ForgotPasswordScreen() {
           {t('auth.resetEmailSent', { email: email.trim() })}
         </Text>
         <Pressable
-          onPress={() => router.push('/auth/login')}
+          onPress={() => router.back()}
           className="bg-brand rounded-xl py-3 items-center"
         >
           <Text className="text-white font-semibold">
@@ -58,7 +61,9 @@ export default function ForgotPasswordScreen() {
   return (
     <View className="flex-1 bg-white px-6 justify-center">
       <Pressable onPress={() => router.back()} className="mb-8">
-        <Text className="text-brand font-medium">← {t('auth.backToLogin')}</Text>
+        <Text className="text-brand font-medium">
+          ← {t('auth.backToLogin')}
+        </Text>
       </Pressable>
 
       <Text className="text-2xl font-bold text-ink mb-2">
