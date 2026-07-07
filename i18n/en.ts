@@ -211,11 +211,18 @@ export default {
     afternoon: '1pm',
     evening: '7pm',
   },
-  
+
   search: {
     placeholder: 'Search articles...',
     cancel: 'Cancel',
     noResults: 'No results for "%{query}"',
     searching: 'Searching...',
+  },
+
+  theme: {
+    title: 'Appearance',
+    light: 'Light',
+    dark: 'Dark',
+    system: 'System',
   },
 };

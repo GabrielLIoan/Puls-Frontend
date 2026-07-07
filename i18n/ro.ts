@@ -218,4 +218,11 @@ export default {
     noResults: 'Niciun rezultat pentru "%{query}"',
     searching: 'Se caută...',
   },
+
+  theme: {
+    title: 'Aspect',
+    light: 'Deschis',
+    dark: 'Întunecat',
+    system: 'Sistem',
+  },
 };

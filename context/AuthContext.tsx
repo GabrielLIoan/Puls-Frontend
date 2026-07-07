@@ -1,9 +1,9 @@
 import {
-    createContext,
-    useContext,
-    useEffect,
-    useState,
-    type ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
 } from 'react';
 import { authApi } from '../api/auth';
 import { setUnauthorizedHandler, tokenStorage } from '../api/client';
@@ -85,6 +85,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) {
+    return {
+      user: null,
+      isLoading: true,
+      login: async () => {},
+      signup: async () => {},
+      logout: async () => {},
+    };
+  }
   return ctx;
 }

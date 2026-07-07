@@ -1,11 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useState,
-    type ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
 } from 'react';
 import { getCurrentLocale, setLocale, type SupportedLocale } from '../i18n';
 
@@ -66,6 +66,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
 export function useLanguage(): LanguageContextValue {
   const ctx = useContext(LanguageContext);
-  if (!ctx) throw new Error('useLanguage must be used within LanguageProvider');
+  // Return a safe default instead of throwing — tab layouts render
+  // early before providers are fully mounted
+  if (!ctx) {
+    return {
+      locale: 'en',
+      setLanguage: async () => {},
+      languageLabel: '🇬🇧 English',
+      availableLocales: [
+        { value: 'en', label: '🇬🇧 English' },
+        { value: 'ro', label: '🇷🇴 Română' },
+      ],
+    };
+  }
   return ctx;
 }

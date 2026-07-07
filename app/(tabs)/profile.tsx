@@ -5,52 +5,76 @@ import { BadgeGallery } from '../../components/BadgeGallery';
 import { XpBar } from '../../components/XpBar';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { ThemePreference, useTheme } from '../../context/ThemeContext';
 import {
   useGamificationBadges,
   useGamificationStats,
 } from '../../hooks/useGamification';
-import { t } from '../../i18n';
+import { SupportedLocale, t } from '../../i18n';
 
-type SupportedLocale = 'en' | 'ro';
-
-function SettingsRow({
-  label,
-  onPress,
-  destructive = false,
-}: {
-  label: string;
-  onPress: () => void;
-  destructive?: boolean;
+function SettingsRow({ label, onPress, destructive = false, showBorder = true }: {
+  label: string; onPress: () => void; destructive?: boolean; showBorder?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100"
+      className={`flex-row items-center justify-between px-4 py-4 ${showBorder ? 'border-b border-gray-100 dark:border-border-dark' : ''}`}
     >
-      <Text
-        className={`font-medium ${destructive ? 'text-red-500' : 'text-ink'}`}
-      >
+      <Text className={`font-medium ${destructive ? 'text-red-500' : 'text-ink dark:text-ink-dark'}`}>
         {label}
       </Text>
-      {!destructive && (
-        <Ionicons name="chevron-forward" size={18} color="#6B7280" />
-      )}
+      {!destructive && <Ionicons name="chevron-forward" size={18} color="#6B7280" />}
     </Pressable>
   );
 }
 
-function LanguageSwitcher({
-  locale,
-  availableLocales,
-  setLanguage,
-}: {
+function ThemeToggle() {
+  const { preference, setPreference } = useTheme();
+  useLanguage();
+
+  const options: { value: ThemePreference; label: string; icon: string }[] = [
+    { value: 'light', label: t('theme.light'), icon: '☀️' },
+    { value: 'system', label: t('theme.system'), icon: '⚙️' },
+    { value: 'dark', label: t('theme.dark'), icon: '🌙' },
+  ];
+
+  return (
+    <View className="px-4 pb-4 pt-3">
+      <Text className="text-xs text-muted dark:text-muted-dark font-medium uppercase mb-2">
+        {t('theme.title')}
+      </Text>
+      <View className="flex-row gap-2">
+        {options.map(({ value, label, icon }) => (
+          <Pressable
+            key={value}
+            onPress={() => setPreference(value)}
+            className={`flex-1 py-2.5 rounded-xl items-center border ${
+              preference === value
+                ? 'bg-brand dark:bg-brand-dark border-brand dark:border-brand-dark'
+                : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-border-dark'
+            }`}
+          >
+            <Text className="text-sm mb-0.5">{icon}</Text>
+            <Text className={`text-xs font-medium ${preference === value ? 'text-white' : 'text-ink dark:text-ink-dark'}`}>
+              {label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function LanguageSwitcher({ locale, availableLocales, setLanguage }: {
   locale: string;
   availableLocales: { value: string; label: string }[];
   setLanguage: (l: SupportedLocale) => void;
 }) {
   return (
-    <View className="px-4 py-4">
-      <Text className="text-ink font-medium mb-3">{t('profile.language')}</Text>
+    <View className="px-4 pb-4 pt-3">
+      <Text className="text-xs text-muted dark:text-muted-dark font-medium uppercase mb-2">
+        {t('profile.language')}
+      </Text>
       <View className="flex-row gap-2">
         {availableLocales.map(({ value, label }) => (
           <Pressable
@@ -58,15 +82,11 @@ function LanguageSwitcher({
             onPress={() => setLanguage(value as SupportedLocale)}
             className={`flex-1 py-2.5 rounded-xl items-center border ${
               locale === value
-                ? 'bg-brand border-brand'
-                : 'bg-white border-gray-200'
+                ? 'bg-brand dark:bg-brand-dark border-brand dark:border-brand-dark'
+                : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-border-dark'
             }`}
           >
-            <Text
-              className={`font-medium text-sm ${
-                locale === value ? 'text-white' : 'text-ink'
-              }`}
-            >
+            <Text className={`font-medium text-sm ${locale === value ? 'text-white' : 'text-ink dark:text-ink-dark'}`}>
               {label}
             </Text>
           </Pressable>
@@ -83,100 +103,54 @@ export default function ProfileScreen() {
   const { data: stats } = useGamificationStats();
   const { data: badges } = useGamificationBadges();
 
-  if (isAuthLoading) {
-    return <View className="flex-1 bg-gray-50" />;
-  }
+  if (isAuthLoading) return <View className="flex-1 bg-gray-50 dark:bg-bg-dark" />;
 
   if (!user) {
     return (
-      <View className="flex-1 bg-white items-center justify-center px-6">
-        <Text className="text-ink font-bold text-2xl mb-2">
-          {t('profile.signInTitle')}
-        </Text>
-        <Text className="text-muted text-center mb-8">
-          {t('profile.signInSubtitle')}
-        </Text>
-
-        <Pressable
-          onPress={() => router.push('/auth/login')}
-          className="bg-brand rounded-xl py-3 px-8 items-center w-full mb-3"
-        >
-          <Text className="text-white font-semibold">
-            {t('auth.loginButton')}
-          </Text>
+      <View className="flex-1 bg-white dark:bg-bg-dark px-6 justify-center">
+        <Text className="text-ink dark:text-ink-dark font-bold text-2xl mb-2 text-center">{t('profile.signInTitle')}</Text>
+        <Text className="text-muted dark:text-muted-dark text-center mb-8">{t('profile.signInSubtitle')}</Text>
+        <Pressable onPress={() => router.push('/auth/login')} className="bg-brand dark:bg-brand-dark rounded-xl py-3 items-center w-full mb-3">
+          <Text className="text-white font-semibold">{t('auth.loginButton')}</Text>
         </Pressable>
-
-        <Pressable
-          onPress={() => router.push('/auth/signup')}
-          className="border border-gray-200 rounded-xl py-3 px-8 items-center w-full mb-8"
-        >
-          <Text className="text-ink font-semibold">
-            {t('auth.signupButton')}
-          </Text>
+        <Pressable onPress={() => router.push('/auth/signup')} className="border border-gray-200 dark:border-border-dark rounded-xl py-3 items-center w-full mb-8">
+          <Text className="text-ink dark:text-ink-dark font-semibold">{t('auth.signupButton')}</Text>
         </Pressable>
-
-        <LanguageSwitcher
-          locale={locale}
-          availableLocales={availableLocales}
-          setLanguage={setLanguage}
-        />
+        <LanguageSwitcher locale={locale} availableLocales={availableLocales} setLanguage={setLanguage} />
       </View>
     );
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
-      {/* Header */}
-      <View className="bg-white px-6 pt-16 pb-6 mb-4">
-        <Text className="text-2xl font-bold text-ink mb-0.5">
+    <ScrollView className="flex-1 bg-gray-50 dark:bg-bg-dark">
+      <View className="bg-white dark:bg-surface-dark px-5 pt-14 pb-5 mb-4">
+        <Text className="text-2xl font-bold text-ink dark:text-ink-dark">
           {user.displayName || user.email}
         </Text>
-        <Text className="text-muted">{user.email}</Text>
+        <Text className="text-muted dark:text-muted-dark text-sm mt-0.5">{user.email}</Text>
       </View>
 
-      {/* XP / streak bar */}
       {stats && <XpBar stats={stats} />}
 
       {/* Settings rows */}
-      <View className="bg-white mx-4 rounded-2xl mb-4 overflow-hidden">
-        <SettingsRow
-          label={t('profile.manageOutlets')}
-          onPress={() => router.push('/settings/outlets')}
-        />
-        <SettingsRow
-          label={t('profile.categoryPreferences')}
-          onPress={() => {}}
-        />
-        {/* Password reset — navigates to forgot-password which sends
-            the reset email. Email is pre-filled since we know it. */}
-        <SettingsRow
-          label={t('profile.changePassword')}
-          onPress={() =>
-            router.push({
-              pathname: '/auth/forgot-password',
-              params: { prefillEmail: user.email },
-            })
-          }
-        />
-
-        {/* Language switcher */}
-        <LanguageSwitcher
-          locale={locale}
-          availableLocales={availableLocales}
-          setLanguage={setLanguage}
-        />
+      <View className="bg-white dark:bg-surface-dark mx-4 rounded-2xl mb-4 overflow-hidden">
+        <SettingsRow label={t('profile.manageOutlets')} onPress={() => router.push('/settings/outlets')} />
+        <SettingsRow label={t('profile.categoryPreferences')} onPress={() => {}} />
+        <SettingsRow label={t('profile.changePassword')} onPress={() => router.push({ pathname: '/auth/forgot-password', params: { prefillEmail: user.email } })} showBorder={false} />
       </View>
 
-      {/* Badge gallery */}
+      {/* Appearance card — theme + language */}
+      <View className="bg-white dark:bg-surface-dark mx-4 rounded-2xl mb-4 overflow-hidden">
+        <ThemeToggle />
+        <View className="border-t border-gray-100 dark:border-border-dark">
+          <LanguageSwitcher locale={locale} availableLocales={availableLocales} setLanguage={setLanguage} />
+        </View>
+      </View>
+
       {badges && <BadgeGallery earnedBadges={badges} />}
 
-      {/* Logout */}
-      <View className="bg-white mx-4 rounded-2xl mb-8 overflow-hidden">
-        <SettingsRow
-          label={t('profile.logout')}
-          onPress={logout}
-          destructive
-        />
+      <View className="bg-white dark:bg-surface-dark mx-4 rounded-2xl mb-8 overflow-hidden">
+        <SettingsRow label={t('profile.logout')} onPress={logout} destructive showBorder={false} />
       </View>
     </ScrollView>
   );

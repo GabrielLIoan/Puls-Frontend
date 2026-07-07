@@ -4,19 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Linking,
-  Pressable,
-  ScrollView,
-  Share,
-  Text,
-  View,
+  ActivityIndicator, Alert, Image, Linking,
+  Pressable, ScrollView, Share, Text, View,
 } from 'react-native';
 import { articlesApi } from '../../api/articles';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 import { useRecordRead } from '../../hooks/useGamification';
 import { useSaveToggle } from '../../hooks/useSaveToggle';
 import { t } from '../../i18n';
@@ -27,6 +21,7 @@ export default function ArticleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const { isDark } = useTheme();
   useLanguage();
 
   const { data: article, isLoading } = useQuery({
@@ -37,8 +32,6 @@ export default function ArticleDetailScreen() {
 
   const { isSaved, isLoading: isSaveLoading, toggle } = useSaveToggle(id);
   const { mutate: recordRead } = useRecordRead();
-
-  // --- ReadEvent tracking ---
   const dwellTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasRecorded = useRef(false);
 
@@ -52,39 +45,20 @@ export default function ArticleDetailScreen() {
   useEffect(() => {
     if (!article || !user) return;
     dwellTimerRef.current = setTimeout(tryRecordRead, DWELL_TIME_MS);
-    return () => {
-      if (dwellTimerRef.current) clearTimeout(dwellTimerRef.current);
-    };
+    return () => { if (dwellTimerRef.current) clearTimeout(dwellTimerRef.current); };
   }, [article, user]);
 
-  // --- Share ---
   async function handleShare() {
     if (!article) return;
-    try {
-      await Share.share({
-        title: article.title,
-        message: `${article.title}\n\n${article.link}`,
-        url: article.link, // iOS uses url, Android uses message
-      });
-    } catch {
-      // User dismissed the share sheet — not an error
-    }
+    try { await Share.share({ title: article.title, message: `${article.title}\n\n${article.link}`, url: article.link }); } catch {}
   }
 
-  // --- Save ---
   function handleSavePress() {
     if (!user) {
-      Alert.alert(
-        t('article.signInToSave'),
-        t('article.signInToSaveMessage'),
-        [
-          { text: t('article.cancel'), style: 'cancel' },
-          {
-            text: t('auth.loginButton'),
-            onPress: () => router.push('/auth/login'),
-          },
-        ],
-      );
+      Alert.alert(t('article.signInToSave'), t('article.signInToSaveMessage'), [
+        { text: t('article.cancel'), style: 'cancel' },
+        { text: t('auth.loginButton'), onPress: () => router.push('/auth/login') },
+      ]);
       return;
     }
     toggle();
@@ -92,59 +66,58 @@ export default function ArticleDetailScreen() {
 
   if (isLoading || !article) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex-1 items-center justify-center bg-white dark:bg-bg-dark">
         <ActivityIndicator size="large" color="#FF5A5F" />
       </View>
     );
   }
 
+  const iconColor = isDark ? '#F9FAFB' : '#1A1A1A';
+  const summaryColor = isDark ? '#D1D5DB' : '#374151';
+
   return (
-    <View className="flex-1 bg-white">
-      {/* Header: back — share + save */}
-      <View className="flex-row items-center justify-between px-4 pt-14 pb-3">
+    <View className="flex-1 bg-white dark:bg-bg-dark">
+      {/* Header needs explicit background so icons are always visible */}
+      <View className="flex-row items-center justify-between px-4 pt-12 pb-2 bg-white dark:bg-bg-dark">
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
+          <Ionicons name="arrow-back" size={24} color={iconColor} />
         </Pressable>
-
         <View className="flex-row items-center gap-4">
-          {/* Share button */}
           <Pressable onPress={handleShare} hitSlop={12}>
-            <Ionicons name="share-outline" size={24} color="#1A1A1A" />
+            <Ionicons name="share-outline" size={22} color={iconColor} />
           </Pressable>
-
-          {/* Save button */}
-          <Pressable
-            onPress={handleSavePress}
-            hitSlop={12}
-            disabled={isSaveLoading}
-          >
+          <Pressable onPress={handleSavePress} hitSlop={12} disabled={isSaveLoading}>
             <Ionicons
               name={isSaved ? 'bookmark' : 'bookmark-outline'}
-              size={24}
-              color={isSaved ? '#FF5A5F' : '#1A1A1A'}
+              size={22}
+              color={isSaved ? (isDark ? '#FF7A7F' : '#FF5A5F') : iconColor}
             />
           </Pressable>
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-4">
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
         {article.imageUrl && (
-          <Image
-            source={{ uri: article.imageUrl }}
-            className="w-full h-48 rounded-xl bg-gray-100 mb-4"
-            resizeMode="cover"
-          />
+          <Image source={{ uri: article.imageUrl }} className="w-full h-48 rounded-xl bg-gray-100 dark:bg-gray-700 mb-4" resizeMode="cover" />
         )}
 
-        <Text className="text-muted text-xs font-medium mb-1">
-          {article.outlet.name}
-        </Text>
-        <Text className="text-ink text-2xl font-bold mb-3">
+        <View className="flex-row items-center gap-2 mb-3">
+          <View className="bg-gray-100 dark:bg-gray-700 rounded-full px-2.5 py-1">
+            <Text className="text-muted dark:text-muted-dark text-xs font-semibold">{article.outlet.name}</Text>
+          </View>
+          {article.category && (
+            <View className="bg-gray-100 dark:bg-gray-700 rounded-full px-2.5 py-1">
+              <Text className="text-muted dark:text-muted-dark text-xs font-medium">{article.category}</Text>
+            </View>
+          )}
+        </View>
+
+        <Text className="text-ink dark:text-ink-dark text-2xl font-bold leading-tight mb-4">
           {article.title}
         </Text>
 
         {article.summary && (
-          <Text className="text-ink text-base leading-relaxed mb-4">
+          <Text className="text-base leading-relaxed mb-4" style={{ color: summaryColor }}>
             {article.summary}
           </Text>
         )}
@@ -153,7 +126,7 @@ export default function ArticleDetailScreen() {
 
         <Pressable
           onPress={() => Linking.openURL(article.link)}
-          className="bg-brand rounded-xl py-3 items-center mb-8"
+          className="bg-brand dark:bg-brand-dark rounded-xl py-3.5 items-center mt-2 mb-8"
         >
           <Text className="text-white font-semibold">
             {t('article.readFullArticle', { outlet: article.outlet.name })}
