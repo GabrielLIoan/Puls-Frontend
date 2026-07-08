@@ -1,13 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  Text,
-  TextInput,
-  View,
+  ActivityIndicator, FlatList, Pressable,
+  RefreshControl, Text, TextInput, View,
 } from 'react-native';
 import { ArticleCard } from '../../components/ArticleCard';
 import { FilterBottomSheet } from '../../components/FilterBottomSheet';
@@ -15,16 +10,19 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useArticleFeed } from '../../hooks/useArticleFeed';
+import { useColumns } from '../../hooks/useColumns';
 import { useFeedFilter } from '../../hooks/useFeedFilter';
 import { useGamificationStats } from '../../hooks/useGamification';
 import { useSearch } from '../../hooks/useSearch';
 import { t } from '../../i18n';
 import type { Article } from '../../types/api';
+import type { CountryFilter } from '../../types/feedFilter';
 
 export default function FeedScreen() {
   const { user } = useAuth();
   const { isDark } = useTheme();
   const { data: stats } = useGamificationStats();
+  const columns = useColumns();
   useLanguage();
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -32,26 +30,18 @@ export default function FeedScreen() {
   const [filterOpen, setFilterOpen] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
-  const { filter, activeCount, toggleCountry, toggleCategory, clearAll } =
-    useFeedFilter();
-
+  const { filter, activeCount, toggleCountry, toggleCategory, clearAll } = useFeedFilter();
   const isSearching = searchOpen && searchQuery.trim().length >= 2;
 
   const {
-    data: feedData,
-    isLoading: feedLoading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    refetch,
-    isRefetching,
+    data: feedData, isLoading: feedLoading,
+    fetchNextPage, hasNextPage, isFetchingNextPage,
+    refetch, isRefetching,
   } = useArticleFeed(filter);
 
-  const { data: searchData, isFetching: searchFetching } =
-    useSearch(searchQuery);
+  const { data: searchData, isFetching: searchFetching } = useSearch(searchQuery);
 
-  const feedArticles: Article[] =
-    feedData?.pages.flatMap((p) => p.data) ?? [];
+  const feedArticles: Article[] = feedData?.pages.flatMap((p) => p.data) ?? [];
   const searchArticles: Article[] = searchData?.data ?? [];
   const articles = isSearching ? searchArticles : feedArticles;
 
@@ -72,21 +62,24 @@ export default function FeedScreen() {
     <View className="flex-1 bg-gray-50 dark:bg-bg-dark">
       <FlatList
         data={articles}
+        // Key must change when numColumns changes — React Native requirement
+        key={`feed-${columns}`}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ArticleCard article={item} />}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        numColumns={columns}
+        renderItem={({ item }) => <ArticleCard article={item} columns={columns} />}
+        contentContainerStyle={{
+          paddingBottom: 24,
+          // In grid mode, outer padding replaces per-card mx-4
+          paddingHorizontal: columns > 1 ? 10 : 0,
+          paddingTop: columns > 1 ? 6 : 0,
+        }}
         refreshControl={
           !isSearching ? (
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={refetch}
-              tintColor="#FF5A5F"
-            />
+            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#FF5A5F" />
           ) : undefined
         }
         onEndReached={() => {
-          if (!isSearching && hasNextPage && !isFetchingNextPage)
-            fetchNextPage();
+          if (!isSearching && hasNextPage && !isFetchingNextPage) fetchNextPage();
         }}
         onEndReachedThreshold={0.5}
         ListHeaderComponent={
@@ -94,11 +87,7 @@ export default function FeedScreen() {
             {searchOpen ? (
               <View className="flex-row items-center gap-2">
                 <View className="flex-1 flex-row items-center bg-gray-100 dark:bg-gray-700 rounded-xl px-3 py-2 gap-2">
-                  <Ionicons
-                    name="search"
-                    size={16}
-                    color={isDark ? '#9CA3AF' : '#6B7280'}
-                  />
+                  <Ionicons name="search" size={16} color={isDark ? '#9CA3AF' : '#6B7280'} />
                   <TextInput
                     ref={inputRef}
                     value={searchQuery}
@@ -112,11 +101,7 @@ export default function FeedScreen() {
                   />
                   {searchQuery.length > 0 && (
                     <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                      <Ionicons
-                        name="close-circle"
-                        size={16}
-                        color={isDark ? '#6B7280' : '#9CA3AF'}
-                      />
+                      <Ionicons name="close-circle" size={16} color={isDark ? '#6B7280' : '#9CA3AF'} />
                     </Pressable>
                   )}
                 </View>
@@ -138,22 +123,14 @@ export default function FeedScreen() {
                 </View>
 
                 <View className="flex-row items-center gap-3">
-                  {/* Streak */}
                   {user && stats && stats.currentStreak > 0 && (
                     <View className="flex-row items-center gap-1 bg-orange-50 dark:bg-orange-900/30 px-2.5 py-1 rounded-full">
                       <Text className="text-sm">🔥</Text>
-                      <Text className="text-orange-500 font-bold text-sm">
-                        {stats.currentStreak}
-                      </Text>
+                      <Text className="text-orange-500 font-bold text-sm">{stats.currentStreak}</Text>
                     </View>
                   )}
 
-                  {/* Filter button — shows badge when active */}
-                  <Pressable
-                    onPress={() => setFilterOpen(true)}
-                    hitSlop={8}
-                    className="relative"
-                  >
+                  <Pressable onPress={() => setFilterOpen(true)} hitSlop={8} className="relative">
                     <Ionicons
                       name="options-outline"
                       size={22}
@@ -161,14 +138,11 @@ export default function FeedScreen() {
                     />
                     {activeCount > 0 && (
                       <View className="absolute -top-1.5 -right-1.5 bg-brand dark:bg-brand-dark rounded-full w-4 h-4 items-center justify-center">
-                        <Text className="text-white text-xs font-bold leading-none">
-                          {activeCount}
-                        </Text>
+                        <Text className="text-white text-xs font-bold leading-none">{activeCount}</Text>
                       </View>
                     )}
                   </Pressable>
 
-                  {/* Search */}
                   <Pressable onPress={openSearch} hitSlop={8}>
                     <Ionicons name="search" size={22} color={iconColor} />
                   </Pressable>
@@ -176,12 +150,11 @@ export default function FeedScreen() {
               </View>
             )}
 
-            {/* Active filter pills shown below the title */}
             {!searchOpen && activeCount > 0 && (
               <View className="flex-row flex-wrap gap-1.5 mt-2">
                 {filter.country && (
                   <Pressable
-                    onPress={() => toggleCountry(filter.country)}
+                    onPress={() => toggleCountry(filter.country as CountryFilter)}
                     className="flex-row items-center gap-1 bg-brand/10 dark:bg-brand-dark/10 px-2.5 py-1 rounded-full"
                   >
                     <Text className="text-brand dark:text-brand-dark text-xs font-medium">
@@ -196,9 +169,7 @@ export default function FeedScreen() {
                     onPress={() => toggleCategory(cat)}
                     className="flex-row items-center gap-1 bg-brand/10 dark:bg-brand-dark/10 px-2.5 py-1 rounded-full"
                   >
-                    <Text className="text-brand dark:text-brand-dark text-xs font-medium">
-                      {cat}
-                    </Text>
+                    <Text className="text-brand dark:text-brand-dark text-xs font-medium">{cat}</Text>
                     <Ionicons name="close" size={12} color="#FF5A5F" />
                   </Pressable>
                 ))}
@@ -214,16 +185,12 @@ export default function FeedScreen() {
         }
         ListFooterComponent={
           isFetchingNextPage ? (
-            <View className="py-4">
-              <ActivityIndicator color="#FF5A5F" />
-            </View>
+            <View className="py-4"><ActivityIndicator color="#FF5A5F" /></View>
           ) : null
         }
         ListEmptyComponent={
           (isSearching ? searchFetching : feedLoading) ? (
-            <View className="py-20 items-center">
-              <ActivityIndicator color="#FF5A5F" />
-            </View>
+            <View className="py-20 items-center"><ActivityIndicator color="#FF5A5F" /></View>
           ) : isSearching ? (
             <View className="items-center justify-center py-20 px-6">
               <Text className="text-muted dark:text-muted-dark text-center">
@@ -233,9 +200,7 @@ export default function FeedScreen() {
           ) : (
             <View className="items-center justify-center py-20 px-6">
               <Text className="text-muted dark:text-muted-dark text-center">
-                {activeCount > 0
-                  ? t('filter.noResults')
-                  : t('feed.noArticles')}
+                {activeCount > 0 ? t('filter.noResults') : t('feed.noArticles')}
               </Text>
             </View>
           )

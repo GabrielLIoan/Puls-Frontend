@@ -4,8 +4,15 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import {
-  ActivityIndicator, Alert, Image, Linking,
-  Pressable, ScrollView, Share, Text, View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Linking,
+  Pressable,
+  ScrollView,
+  Share,
+  Text,
+  View,
 } from 'react-native';
 import { articlesApi } from '../../api/articles';
 import { useAuth } from '../../context/AuthContext';
@@ -22,6 +29,7 @@ export default function ArticleDetailScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { isDark } = useTheme();
+  const isLoggedIn = !!user;
   useLanguage();
 
   const { data: article, isLoading } = useQuery({
@@ -45,20 +53,32 @@ export default function ArticleDetailScreen() {
   useEffect(() => {
     if (!article || !user) return;
     dwellTimerRef.current = setTimeout(tryRecordRead, DWELL_TIME_MS);
-    return () => { if (dwellTimerRef.current) clearTimeout(dwellTimerRef.current); };
+    return () => {
+      if (dwellTimerRef.current) clearTimeout(dwellTimerRef.current);
+    };
   }, [article, user]);
 
   async function handleShare() {
     if (!article) return;
-    try { await Share.share({ title: article.title, message: `${article.title}\n\n${article.link}`, url: article.link }); } catch {}
+    try {
+      await Share.share({
+        title: article.title,
+        message: `${article.title}\n\n${article.link}`,
+        url: article.link,
+      });
+    } catch {}
   }
 
   function handleSavePress() {
-    if (!user) {
-      Alert.alert(t('article.signInToSave'), t('article.signInToSaveMessage'), [
-        { text: t('article.cancel'), style: 'cancel' },
-        { text: t('auth.loginButton'), onPress: () => router.push('/auth/login') },
-      ]);
+    if (!isLoggedIn) {
+      Alert.alert(
+        t('article.signInToSave'),
+        t('article.signInToSaveMessage'),
+        [
+          { text: t('article.cancel'), style: 'cancel' },
+          { text: t('auth.loginButton'), onPress: () => router.push('/auth/login') },
+        ],
+      );
       return;
     }
     toggle();
@@ -75,9 +95,28 @@ export default function ArticleDetailScreen() {
   const iconColor = isDark ? '#F9FAFB' : '#1A1A1A';
   const summaryColor = isDark ? '#D1D5DB' : '#374151';
 
+  // Save icon: lock when logged out, bookmark when logged in
+  function SaveIcon() {
+    if (!isLoggedIn) {
+      return (
+        <Ionicons
+          name="lock-closed-outline"
+          size={22}
+          color={isDark ? '#4B5563' : '#D1D5DB'}
+        />
+      );
+    }
+    return (
+      <Ionicons
+        name={isSaved ? 'bookmark' : 'bookmark-outline'}
+        size={22}
+        color={isSaved ? (isDark ? '#FF7A7F' : '#FF5A5F') : iconColor}
+      />
+    );
+  }
+
   return (
     <View className="flex-1 bg-white dark:bg-bg-dark">
-      {/* Header needs explicit background so icons are always visible */}
       <View className="flex-row items-center justify-between px-4 pt-12 pb-2 bg-white dark:bg-bg-dark">
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={iconColor} />
@@ -86,28 +125,36 @@ export default function ArticleDetailScreen() {
           <Pressable onPress={handleShare} hitSlop={12}>
             <Ionicons name="share-outline" size={22} color={iconColor} />
           </Pressable>
-          <Pressable onPress={handleSavePress} hitSlop={12} disabled={isSaveLoading}>
-            <Ionicons
-              name={isSaved ? 'bookmark' : 'bookmark-outline'}
-              size={22}
-              color={isSaved ? (isDark ? '#FF7A7F' : '#FF5A5F') : iconColor}
-            />
+          <Pressable
+            onPress={handleSavePress}
+            hitSlop={12}
+            disabled={isSaveLoading}
+          >
+            <SaveIcon />
           </Pressable>
         </View>
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
         {article.imageUrl && (
-          <Image source={{ uri: article.imageUrl }} className="w-full h-48 rounded-xl bg-gray-100 dark:bg-gray-700 mb-4" resizeMode="cover" />
+          <Image
+            source={{ uri: article.imageUrl }}
+            className="w-full h-48 rounded-xl bg-gray-100 dark:bg-gray-700 mb-4"
+            resizeMode="cover"
+          />
         )}
 
         <View className="flex-row items-center gap-2 mb-3">
           <View className="bg-gray-100 dark:bg-gray-700 rounded-full px-2.5 py-1">
-            <Text className="text-muted dark:text-muted-dark text-xs font-semibold">{article.outlet.name}</Text>
+            <Text className="text-muted dark:text-muted-dark text-xs font-semibold">
+              {article.outlet.name}
+            </Text>
           </View>
           {article.category && (
             <View className="bg-gray-100 dark:bg-gray-700 rounded-full px-2.5 py-1">
-              <Text className="text-muted dark:text-muted-dark text-xs font-medium">{article.category}</Text>
+              <Text className="text-muted dark:text-muted-dark text-xs font-medium">
+                {article.category}
+              </Text>
             </View>
           )}
         </View>
