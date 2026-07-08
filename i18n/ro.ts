@@ -225,4 +225,38 @@ export default {
     dark: 'Întunecat',
     system: 'Sistem',
   },
+
+  categories: {
+    title: 'Preferințe categorii',
+    subtitleAll: 'Nicio categorie selectată — feed-ul afișează toate știrile. Apasă categoriile de mai jos pentru a filtra.',
+    subtitleFiltered: '%{count} categorii selectate — feed-ul afișează doar acestea.',
+    clearAll: 'Șterge tot — afișează toate',
+    hint: 'Feed-ul tău personalizat va afișa doar articole din categoriile selectate.',
+    politics: 'Politică',
+    economy: 'Economie',
+    sport: 'Sport',
+    tech: 'Tehnologie',
+    culture: 'Cultură',
+    world: 'Internațional',
+    romania: 'România',
+    emoji: {
+      politics: '🏛️',
+      economy: '📈',
+      sport: '⚽',
+      tech: '💻',
+      culture: '🎭',
+      world: '🌍',
+      romania: '🇷🇴',
+    },
+  },
+
+  filter: {
+    title: 'Filtrează feed-ul',
+    country: 'Țară',
+    category: 'Categorie',
+    clearAll: 'Șterge tot',
+    active: '%{count} filtru(e) activ(e)',
+    noResults: 'Niciun articol nu corespunde filtrelor. Încearcă să elimini unele.',
+    noCategories: 'Nicio categorie găsită încă.',
+  },
 };

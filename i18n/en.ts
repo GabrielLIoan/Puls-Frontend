@@ -225,4 +225,38 @@ export default {
     dark: 'Dark',
     system: 'System',
   },
+
+  categories: {
+    title: 'Category preferences',
+    subtitleAll: 'No categories selected — your feed shows everything. Tap categories below to filter.',
+    subtitleFiltered: '%{count} categories selected — your feed shows only these.',
+    clearAll: 'Clear all — show everything',
+    hint: 'Your personalized feed will only show articles from selected categories.',
+    politics: 'Politics',
+    economy: 'Economy',
+    sport: 'Sport',
+    tech: 'Technology',
+    culture: 'Culture',
+    world: 'World',
+    romania: 'Romania',
+    emoji: {
+      politics: '🏛️',
+      economy: '📈',
+      sport: '⚽',
+      tech: '💻',
+      culture: '🎭',
+      world: '🌍',
+      romania: '🇷🇴',
+    },
+  },
+
+  filter: {
+    title: 'Filter feed',
+    country: 'Country',
+    category: 'Category',
+    clearAll: 'Clear all',
+    active: '%{count} active filter(s)',
+    noResults: 'No articles match your filters. Try removing some.',
+    noCategories: 'No categories found yet.',
+  },
 };

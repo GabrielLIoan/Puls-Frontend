@@ -198,10 +198,6 @@ export default function ProfileScreen() {
           onPress={() => router.push('/settings/outlets')}
         />
         <SettingsRow
-          label={t('profile.categoryPreferences')}
-          onPress={() => {}}
-        />
-        <SettingsRow
           label={t('profile.changePassword')}
           onPress={() =>
             router.push({
